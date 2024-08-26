@@ -89,5 +89,11 @@ Open your web browser and go to `http://localhost:8501`. You can now interact wi
 
 - **flask_app/**: Contains the backend Flask API and utility functions.
 - **streamlit_app/**: Contains the Streamlit front-end code.
-- **.env**: Stores API keys (make sure this file is not included in version control).
 - **requirements.txt**: Lists the project dependencies.
+![Screenshot 2024-08-26 203601](https://github.com/user-attachments/assets/e97b4fb7-194e-479c-91a4-7816abbaf80d)
+![Screenshot 2024-08-26 203632](https://github.com/user-attachments/assets/2e2de089-8445-4a48-8cd8-096db4a00a47)
+
+
+
+
+
