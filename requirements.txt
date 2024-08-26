@@ -1,0 +1,7 @@
+Flask
+requests
+beautifulsoup4
+googlesearch-python
+numpy
+langchain
+langchain-ollama
