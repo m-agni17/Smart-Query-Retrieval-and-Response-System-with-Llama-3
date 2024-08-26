@@ -29,6 +29,7 @@ def find_most_similar(needle, haystack):
     ]
     return sorted(zip(similarity_scores, range(len(haystack))), reverse=True)
 
+# Initialize conversation chain if not already in session state
 if "conversation_chain" not in st.session_state:
     conversation_memory = ConversationBufferMemory()
     st.session_state["conversation_chain"] = ConversationChain(
@@ -36,6 +37,10 @@ if "conversation_chain" not in st.session_state:
         memory=conversation_memory,
         verbose=True
     )
+
+# Initialize session state for conversation
+if "conversation_active" not in st.session_state:
+    st.session_state["conversation_active"] = True
 
 # Initialize chat history and context
 if "messages" not in st.session_state:
@@ -65,8 +70,9 @@ def generate_response(user_question, retrieved_content):
     
     return assistant_reply
 
-st.title("QA Chatbot with Enhanced UI")
+st.title("Conversational Search Assistant")
 
+# Display chat history
 for message in st.session_state["messages"]:
     if message["role"] == "user":
         with st.chat_message("user"):
@@ -102,41 +108,48 @@ if st.button("Search"):
 
 user_question = st.text_input("Ask a question about the content:")
 
-if st.button("Get Answer"):
+if st.button("Submit Question"):
     if user_question:
-        st.session_state["messages"].append({"role": "user", "content": user_question})
-        
-        with st.chat_message("user"):
-            st.markdown(user_question)
+        if st.session_state["conversation_active"]:
+            st.session_state["messages"].append({"role": "user", "content": user_question})
+            
+            with st.chat_message("user"):
+                st.markdown(user_question)
 
-        try:
-            with st.spinner("Processing your question..."):
-                prompt_embedding = ollama.embeddings(
-                    model="mxbai-embed-large", 
-                    prompt=user_question
-                )["embedding"]
+            try:
+                with st.spinner("Processing your question..."):
+                    prompt_embedding = ollama.embeddings(
+                        model="mxbai-embed-large", 
+                        prompt=user_question
+                    )["embedding"]
 
-                if len(prompt_embedding) == 0:
-                    st.error("Failed to generate an embedding for your question.")
-                    st.stop()
+                    if len(prompt_embedding) == 0:
+                        st.error("Failed to generate an embedding for your question.")
+                        st.stop()
 
-                most_similar_chunks = find_most_similar(prompt_embedding, st.session_state["content_embeddings"])[:5]
+                    most_similar_chunks = find_most_similar(prompt_embedding, st.session_state["content_embeddings"])[:5]
 
-                if not most_similar_chunks:
-                    st.error("No similar content found.")
-                    st.stop()
+                    if not most_similar_chunks:
+                        st.error("No similar content found.")
+                        st.stop()
 
-                # Use the most relevant chunks as retrieved content
-                retrieved_content = "\n".join(
-                    [st.session_state["content_texts"][idx] for _, idx in most_similar_chunks]
-                )
+                    retrieved_content = "\n".join(
+                        [st.session_state["content_texts"][idx] for _, idx in most_similar_chunks]
+                    )
 
-                assistant_reply = generate_response(user_question, retrieved_content)
-                
-                st.session_state["messages"].append({"role": "assistant", "content": assistant_reply})
-                
-                with st.chat_message("assistant"):
-                    st.markdown(assistant_reply)
+                    assistant_reply = generate_response(user_question, retrieved_content)
+                    
+                    st.session_state["messages"].append({"role": "assistant", "content": assistant_reply})
+                    
+                    with st.chat_message("assistant"):
+                        st.markdown(assistant_reply)
 
-        except Exception as e:
-            st.error(f"Error in retrieving answer: {e}")
+            except Exception as e:
+                st.error(f"Error in retrieving answer: {e}")
+        else:
+            st.write("Conversation has ended. Click the 'Search' button to start a new conversation.")
+
+# Button to end the conversation
+if st.button("End Conversation"):
+    st.session_state["conversation_active"] = False
+    st.write("Conversation ended. You can start a new one by searching again.")
